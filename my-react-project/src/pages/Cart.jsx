@@ -1,4 +1,4 @@
-import React, { useContext } from 'react'
+import React, { useContext, useState } from 'react'
 import Footer from '../components/Footer'
 import { useCart } from '../context/CartContext'
 import { FaRegTrashAlt } from 'react-icons/fa'
@@ -8,8 +8,66 @@ import { AuthContext } from '../context/AuthContext';
 const Cart = () => {
   const {cartItem,updateQuantity,deleteItem} = useCart()
   const {user} = useContext(AuthContext)
+  const [fullName,setFullName] = useState("")
+  const [address,setAddress] = useState("")
+  const [contactNo,setContactNo] = useState("")
+  const [paymentMethod, setPaymentMethod] = useState("COD")
 
   const totalPrice = cartItem.reduce((total, item)=>total + item.price*item.quantity, 0)
+
+  
+  const handleCheckout = async () => {
+    if (!address || !contactNo) {
+      alert("Please fill in address and contact number.")
+      return
+    }
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/checkout/", {
+        method: "POST",
+        credentials: "include",  // IMPORTANT to send cookies/session
+        headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({
+        address: address,
+        payment_method: paymentMethod,
+        cart_items: cartItem  })
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        alert(data.error || "Checkout failed")
+        return
+      }
+
+      if (data.status === "success") {
+        alert(data.message)
+        setCartItem([]) // clear cart context
+      }
+
+      if (data.payment_gateway === "esewa") {
+        // Redirect user to eSewa payment page
+        const form = document.createElement("form")
+        form.method = "POST"
+        form.action = data.payment_url
+
+        for (const key in data.payment_data) {
+          const input = document.createElement("input")
+          input.type = "hidden"
+          input.name = key
+          input.value = data.payment_data[key]
+          form.appendChild(input)
+        }
+
+        document.body.appendChild(form)
+        form.submit()
+      }
+
+    } catch (error) {
+      console.error("Checkout error:", error)
+      alert("Something went wrong.")
+    }
+  }
+
   return (
     <><div className='w-full p-5 bg-gradient-to-r from-pink-100 to-blue-100 flex justify-center items-center'>
       {cartItem.length>0?
@@ -50,17 +108,14 @@ const Cart = () => {
 
               <div className='mb-2 flex flex-col space-y-1'>
                 <label>Full Name </label>
-                <input type="text" placeholder='Enter Your Name' value={user ? user.full_name : ""}
-
-                
-
+                <input type="text" placeholder='Enter Your Name'  value={fullName} onChange = {(e)=>setFullName(e.target.value)}
                 className="ml-2 border border-blue-500 rounded p-0.5"/>
 
               </div>
 
               <div className='mb-2 flex flex-col space-y-1'>
                 <label>Address </label>
-                <input type="text" placeholder='Enter Your Address' value={user? user.address: ""} className="ml-2 border border-blue-500 rounded p-0.5"/>
+                <input type="text" placeholder='Enter Your Address' value={address} onChange = {(e)=>setAddress(e.target.value)} className="ml-2 border border-blue-500 rounded p-0.5"/>
 
                 
 
@@ -72,8 +127,18 @@ const Cart = () => {
 
                 <div className='mb-2 flex flex-col space-y-1'>
                 <label>Contact No</label>
-                <input type="text" placeholder='Enter Phone Number' className="ml-2 border border-blue-500 rounded p-0.5"/>
+                <input type="text" placeholder='Enter Phone Number'  value={contactNo} onChange = {(e)=>setContactNo(e.target.value)}className="ml-2 border border-blue-500 rounded p-0.5"/>
                 </div>
+
+<div className='mb-2 flex flex-col space-y-1'>
+              <label>Payment Method</label>
+              <select value={paymentMethod} onChange={(e)=>setPaymentMethod(e.target.value)}
+                className="ml-2 border border-blue-500 rounded p-1">
+                <option value="COD">Cash on Delivery</option>
+                <option value="ESEWA">eSewa</option>
+              </select>
+            </div>
+
                 <div className='mb-2 flex flex-col space-y-5 w-1/4'>
                 <button className='bg-blue-800 text-amber-50 rounded-xl cursor-pointer p-1 hover:bg-red-800'>Submit</button>
                 </div>
@@ -104,7 +169,7 @@ const Cart = () => {
               </div>
 
               <div className='flex justify-center mt-6'>
-                <button className='bg-blue-800 text-amber-50 p-2 rounded-2xl hover:bg-red-800 hover:shadow-2xl transition duration-300 cursor-pointer '>Proceed to Checkout</button>
+                <button className='bg-blue-800 text-amber-50 p-2 rounded-2xl hover:bg-red-800 hover:shadow-2xl transition duration-300 cursor-pointer' onClick={()=>{handleCheckout}} >Proceed to Checkout</button>
               </div>
 
             </div>

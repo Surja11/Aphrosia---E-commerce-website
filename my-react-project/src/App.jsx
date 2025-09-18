@@ -18,6 +18,15 @@ import { useCart } from './context/CartContext'
 const App= () => {
   const {cartItem,setCartItem} = useCart()
 
+  useEffect(() => {
+    const getCSRFToken = async () => {
+      await fetch("http://127.0.0.1:8000/set-csrf/", {
+        credentials: "include"
+      });
+    };
+
+    getCSRFToken();
+  }, []);
   useEffect(()=>{
     const storedCart = localStorage.getItem('cartItem')
 

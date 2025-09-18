@@ -3,9 +3,13 @@ import { toast } from "react-toastify";
 
 export const CartContext = createContext(null)
 
+
 export const CartProvider = ({children}) => {
   const [cartItem, setCartItem] = useState([])
 
+const clearCart = () => {
+  setCartItem([]);
+};
   const addToCart = (product) => {
 
     const itemInCart = cartItem.find((item)=> item.id === product.id)
@@ -51,7 +55,7 @@ export const CartProvider = ({children}) => {
     toast.success("Product Deleted")
   }
   return (
-    <CartContext.Provider value={{ cartItem, setCartItem, addToCart,updateQuantity ,deleteItem}}>
+    <CartContext.Provider value={{ cartItem, setCartItem, addToCart,updateQuantity ,deleteItem,clearCart}}>
       {children}
     </CartContext.Provider>
   )
