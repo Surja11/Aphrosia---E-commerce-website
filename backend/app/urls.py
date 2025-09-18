@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 urlpatterns=[
+  path('api/csrf/', views.get_csrf_token, name='get_csrf_token'),
   path('me/',views.me, name="me"),
   path('register/',views.RegisterView.as_view(),name = "register"),
   path('products/',views.GetProducts, name="products"),

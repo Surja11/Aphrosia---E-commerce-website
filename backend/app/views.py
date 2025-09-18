@@ -15,6 +15,11 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 import uuid
 
+
+@ensure_csrf_cookie
+def set_csrf_token(request):
+    return JsonResponse({"detail": "CSRF cookie set"})
+
 # Create your views here.
 class RegisterView(generics.CreateAPIView):
   queryset = User.objects.all()
@@ -26,7 +31,7 @@ class RegisterView(generics.CreateAPIView):
     return user
 
 
-@api_view(['POST'])
+@api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def me(request):
   user = request.user
@@ -41,11 +46,11 @@ def me(request):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
-def login_view(request):  # renamed to avoid conflict with login
+def login_view(request):  
     serializer = LoginSerializer(data=request.data, context={'request': request})
     if serializer.is_valid():
         user = serializer.validated_data['user']
-        django_login(request, user)  # use _request to get the original Django request object
+        django_login(request, user)  
         return Response({
                 "message": "Login successful",
                 "user": {
@@ -205,51 +210,52 @@ def RemoveCart(request):
     "total_amount": net_amount
   })
 
-  
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def checkout(request):
-  user = request.user;
-  location = request.data.get("location")
-  payment_method = request.data.get("payment_method")
+    user = request.user
+    location = request.data.get("address")
+    payment_method = request.data.get("payment_method")
+    cart_items = request.data.get("cart_items", [])
 
-  cart_items = Cart.objects.filter(user = user)
-  if not cart_items.exists():
-    return Response({'error': 'Cart is empty'}, status = status.HTTP_400_BAD_REQUEST)
-  total_amount = sum(item.product.price * item.quantity for item in cart_items)
+    if not cart_items:
+        return Response({'error': 'Cart is empty'}, status=status.HTTP_400_BAD_REQUEST)
 
-  order_id = f"ORD - {uuid.uuid4().hex[:8]}"
+    # Calculate total amount manually
+    total_amount = sum(item["price"] * item["quantity"] for item in cart_items)
 
-  order = Order.objects.create(
-    user = user,
-    order_id = order_id,
-    amount = total_amount,
-    location = location,
-    payment_method = payment_method,
-    payment_status = 'PENDING'
-  )
+    order_id = f"ORD-{uuid.uuid4().hex[:8]}"
 
-  if payment_method == "COD":
-    order.payment_status = 'ACCEPTED'
-    order.save()
-    cart_items.delete()
+    # Create order
+    order = Order.objects.create(
+        user=user,
+        order_id=order_id,
+        amount=total_amount,
+        location=location,
+        payment_method=payment_method,
+        payment_status='PENDING'
+    )
 
-    return Response({
-      'status': 'success',
-      'message': 'Order placed successfully. Payment will be collected on delivery',
-      'order_id': order_id
-    })
-  elif payment_method == "ESEWA":
-    payment_data = generate_esewa_payment_data(amount = total_amount, order_id=order_id)
-    return Response({'payment_gateway':'esewa',
-      'payment_url': settings.ESEWA_API_URL,
-      'payment_data': payment_data,
-      'method': 'POST'})
-  else:
-    return Response(
-            {'error': 'Invalid payment method'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+    if payment_method == "COD":
+        order.payment_status = 'ACCEPTED'
+        order.save()
+        return Response({
+            'status': 'success',
+            'message': 'Order placed successfully. Payment will be collected on delivery',
+            'order_id': order_id
+        })
+
+    elif payment_method == "ESEWA":
+        payment_data = generate_esewa_payment_data(amount=total_amount, order_id=order_id)
+        return Response({
+            'payment_gateway': 'esewa',
+            'payment_url': settings.ESEWA_API_URL,
+            'payment_data': payment_data,
+            'method': 'POST'
+        })
+
+    return Response({'error': 'Invalid payment method'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 def esewa_success(request):
