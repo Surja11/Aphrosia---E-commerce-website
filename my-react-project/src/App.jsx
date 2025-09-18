@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
@@ -13,8 +13,23 @@ import Login from './pages/Login'
 import {BrowserRouter, Routes, Route} from 'react-router-dom'
 import Register from './pages/Register'
 import SingleProduct from './pages/SingleProduct'
+import { useCart } from './context/CartContext'
 
 const App= () => {
+  const {cartItem,setCartItem} = useCart()
+
+  useEffect(()=>{
+    const storedCart = localStorage.getItem('cartItem')
+
+    if (storedCart){
+      setCartItem(JSON.parse(storedCart))
+    }
+  },[])
+
+  //save cart to local storage
+useEffect(()=>{
+  localStorage.setItem('cartItem',JSON.stringify(cartItem))
+},[cartItem])
   return (
    <BrowserRouter>
    <Navbar/>

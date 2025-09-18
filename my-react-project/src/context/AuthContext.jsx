@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    checkAuth(); // runs once on mount (reload/session restore)
+    checkAuth();
   }, []);
 
   const login = async (credentials) => {
@@ -46,10 +46,10 @@ export const AuthProvider = ({ children }) => {
     });
 
     if (response.ok) {
-      // Login worked → refresh user data from /
+    
       const data = await response.json()
       setIsAuthenticated(true)
-      setUser(data.user)
+      setUser(data)
 
       return { success: true };
     } else {

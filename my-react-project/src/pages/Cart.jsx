@@ -6,10 +6,10 @@ import { LuNotebookText } from "react-icons/lu";
 import { AuthContext } from '../context/AuthContext';
 
 const Cart = () => {
-  const {cartItem} = useCart()
+  const {cartItem,updateQuantity,deleteItem} = useCart()
   const {user} = useContext(AuthContext)
 
-  const totalPrice = cartItem.reduce((total, item)=>total + item.price, 0)
+  const totalPrice = cartItem.reduce((total, item)=>total + item.price*item.quantity, 0)
   return (
     <><div className='w-full p-5 bg-gradient-to-r from-pink-100 to-blue-100 flex justify-center items-center'>
       {cartItem.length>0?
@@ -28,13 +28,16 @@ const Cart = () => {
                 </div>
 
                 <div className='bg-red-700 text-amber-50 flex gap-4 p-2 rounded-md font-bold text-xl'>
-                  <button className="cursor-pointer">-</button>
-                  <span>4</span>
-                  <button className='cursor-pointer'>+</button>
+                  <button className="cursor-pointer" onClick={()=>{
+                    updateQuantity(cartItem,item.id,"decrease")
+                  }}>-</button>
+                  <span>{item.quantity}</span>
+                  <button className='cursor-pointer' onClick={()=>{
+                    updateQuantity(cartItem,item.id,"increase")}}>+</button>
                 </div>
 
                 <span className='hover:bg-white/60 transition-all rounded-full p-3'>
-                  <FaRegTrashAlt className='text-red-500 text-2xl cursor-pointer hover:shadow-2xl'/>
+                  <FaRegTrashAlt className='text-red-500 text-2xl cursor-pointer hover:shadow-2xl' onClick={()=>{deleteItem(cartItem,item.id)}}/>
                 </span>
                 </div>            </div>
           })
