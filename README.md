@@ -48,11 +48,14 @@ pip installed
 A virtual environment tool (optional but recommended)</p>
 <hr>
 <h3>Steps to run the project</h3>
-1. Clone the Repository
+
+#### 1. Clone the Repository
+
 git clone https://github.com/your-username/Aphrosia---E-commerce-website.git
+
 cd Aphrosia---E-commerce-website
 
-2.Backend Setup (Django Rest Framework)
+#### 2. Backend Setup (Django Rest Framework)
 
 Create a Virtual Environment (optional but recommended)
 
@@ -87,7 +90,7 @@ Run the Backend Server
 
 python manage.py runserver
 
-3. Frontend Setup (React)
+#### 3. Frontend Setup (React)##
 cd frontend
 npm install
 npm run dev
